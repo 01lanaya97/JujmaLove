@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I Love You Jujma</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com" rel="stylesheet">
+    
+
+    <style>
+        :root {
+            --pink-shadow: rgba(255, 81, 168, 0.712);
+            --pink-main: #ff85a1;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fcfefc;
+            font-family: 'Playfair Display', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Екрани */
+        #mainScreen, #puzzleScreen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s ease-in-out;
+        }
+
+        #puzzleScreen {
+            opacity: 0;
+            pointer-events: none;
+            background: #fff5f7;
+            flex-direction: column;
+        }
+
+        .container {
+            position: relative;
+            width: 450px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .character {
+            position: absolute;
+            bottom: 270px;
+            left: 45px;
+            width: 150px;
+            z-index: 5;
+        }
+
+        #heartContainer {
+            margin-left: 90px;
+            margin-top: -100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 280px;
+            z-index: 10;
+        }
+
+        .heart-row { display: flex; }
+        
+        .heart-glow {
+            filter: drop-shadow(0 0 15px rgba(255, 182, 193, 0.808))
+            drop-shadow(0 0 30px rgba(255, 105, 180, 0.288));
+            transition: filter 1.5s ease-in-out;
+        }
+
+        .mini-heart {
+            font-size: 18px;
+            margin: 1px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .mini-heart.show { opacity: 1; transform: scale(1); }
+        .bounce-animation { animation: bounce 1.2s ease-in-out infinite alternate; }
+
+        .text-container {
+            margin-top: 50px;
+            font-size: 42px;
+            font-family: 'Playfair Display', serif;
+            font-weight: bold;
+            color: #d63384;
+            text-shadow: 0 0 15px var(--pink-shadow);
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .text-container.visible { 
+            opacity: 1; 
+            visibility: visible;
+            transition: opacity 1s; 
+        }
+
+        .letter { display: inline-block; animation: flash 2s infinite; }
+
+        /* Кнопка сюрпризу */
+        #surpriseBtn {
+            margin-top: 40px;
+            padding: 12px 25px;
+            border: none;
+            background: #ff85a1;
+            color: white;
+            border-radius: 25px;
+            font-family: 'Comfortaa', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--pink-shadow);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        #surpriseBtn.show { opacity: 1; transform: translateY(0); }
+        #surpriseBtn:hover { background: #d63384; transform: scale(1.1); }
+
+        /* П'ятнашка */
+        .puzzle-title { font-family: 'Playfair Display', serif; color: #d63384; font-size: 30px; margin-bottom: 20px; }
+        
+        .puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            background: white;
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(214, 51, 132, 0.2);
+        }
+
+        .puzzle-item {
+            width: 100px;
+            height: 100px;
+            background-size: 300px 300px; /* Для фото 3х3 */
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .puzzle-item.empty {
+            background: #fff0f3 !important;
+            cursor: default;
+        }
+
+        /* Фінал */
+        #winMessage {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5); /* Початковий стан для анімації */
+    width: 320px;
+    padding: 30px;
+    background: white;
+    border-radius: 30px;
+    box-shadow: 0 20px 60px rgba(214, 51, 132, 0.3);
+    display: none; /* Ховаємо спочатку */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    text-align: center;
+    border: 3px solid #fff0f3;
+    transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#winMessage.show-modal {
+    display: flex;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+/* Затемнення фону */
+#overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(5px);
+    display: none;
+    z-index: 9999;
+}
+        .dancing-card { width: 150px; animation: dance 2s infinite ease-in-out; margin-top: 20px; }
+
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
+        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; filter: brightness(1.5); } }
+        @keyframes dance {
+            0%, 100% { transform: rotate(-8deg) scale(1); }
+            50% { transform: rotate(8deg) scale(1.1); }
+        }
+
+/* Конверт-кнопка (замість гіфки у модальному вікні) */
+.envelope-btn {
+    width: 120px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    animation: dance 2s infinite ease-in-out;
+}
+
+/* Анімована стрілочка */
+.arrow-pointer {
+    position: absolute;
+    right: -40px; /* Збоку від конверта */
+    top: 50%;
+    font-size: 30px;
+    color: var(--pink-dark);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    animation: point 1s infinite alternate ease-in-out;
+}
+
+@keyframes point {
+    from { transform: translateX(0); }
+    to { transform: translateX(-15px); }
+}
+
+#letterOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 240, 245, 0.6); /* Ніжно-рожевий прозорий фон */
+    backdrop-filter: blur(10px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 30000;
+}
+
+/* Картка-лист у стилі "Coquette" */
+.letter-card {
+    position: relative;
+    width: 85%;
+    max-width: 400px;
+    background: #ffffff;
+    padding: 50px 40px;
+    border-radius: 60px 5px 60px 5px; /* Елегантні закруглені кути */
+    box-shadow: 0 15px 45px rgba(255, 182, 193, 0.4);
+    border: 2px solid #fff0f5;
+    background-image: 
+        radial-gradient(#fff5f7 1px, transparent 1px); /* Ледь помітна текстура */
+    background-size: 20px 20px;
+}
+
+/* Декоративне сердечко зверху листа */
+.letter-card::before {
+    content: '🌸';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 30px;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.1));
+}
+
+#typingText {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    line-height: 1.7;
+    color: #5d4a4e; /* М'який коричнево-рожевий колір замість чорного */
+    font-style: italic;
+    text-align: center;
+}
+
+/* Ніжний курсор */
+.cursor {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #ffb6c1;
+    border-radius: 50%; /* Курсор-крапочка замість риски */
+    margin-left: 5px;
+    animation: blink 0.8s infinite;
+}
+
+/* Кнопка-сердечко в кінці */
+.final-img {
+    width: 70px;
+    cursor: pointer;
+    filter: drop-shadow(0 5px 15px rgba(255, 105, 180, 0.4));
+    transition: all 0.4s ease;
+}
+
+#finalNextBtn {
+    margin-top: 30px;
+    display: none; /* Повністю прибираємо з потоку */
+    opacity: 0;
+    visibility: hidden; /* Додатковий захист від передчасної появи */
+    text-align: center;
+}
+
+.final-img:hover {
+    transform: scale(1.2) rotate(10deg);
+}
+
+
+
+
+/* Останній екран */
+#finalPage {
+    position: fixed;
+    inset: 0;
+    background: #fff5f7; /* Дуже ніжний рожевий */
+    z-index: 50000;
+    display: none;
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* Стиль для купку фото */
+.photo-stack {
+    position: relative;
+    width: 300px;
+    height: 400px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stacked-photo {
+    position: absolute;
+    width: 220px;
+    height: 280px;
+    object-fit: cover;
+    border: 8px solid white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border-radius: 2px;
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+    transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Модальна картка "Тицьни" */
+#flipCardContainer {
+    position: absolute;
+    width: 180px;
+    height: 100px;
+    perspective: 1000px;
+    display: none;
+    opacity: 0;
+    z-index: 60000;
+    cursor: pointer;
+}
+
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.flip-card-inner.flipped {
+    transform: rotateY(180deg);
+}
+
+.flip-front, .flip-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 15px;
+    background: white;
+    box-shadow: 0 10px 30px rgba(255, 182, 193, 0.5);
+    border: 2px solid #fff0f5;
+}
+
+.flip-back {
+    transform: rotateY(180deg);
+    background: #fff0f5;
+}
+
+.date-text {
+    position: absolute;
+    bottom: 10px;
+    right: 15px;
+    font-size: 10px;
+    color: #d63384;
+    font-family: 'Comfortaa', sans-serif;
+}
+    </style>
+</head>
+<body>
+<div id="overlay"></div>
+<div id="mainScreen">
+    <div class="container">
+        <img src="biu.gif" alt="Biu Biu" class="character" id="mainGif">
+        <div id="heartContainer"></div>
+        <div class="text-container" id="textContainer">
+            <span class="letter" style="animation-delay: 0.1s">I</span>
+            <span class="letter">&nbsp;</span>
+            <span class="letter" style="animation-delay: 0.3s">L</span>
+            <span class="letter" style="animation-delay: 0.4s">O</span>
+            <span class="letter" style="animation-delay: 0.5s">V</span>
+            <span class="letter" style="animation-delay: 0.6s">E</span>
+            <span class="letter">&nbsp;</span>
+            <span class="letter" style="animation-delay: 0.8s">Y</span>
+            <span class="letter" style="animation-delay: 0.9s">O</span>
+            <span class="letter" style="animation-delay: 1.0s">U</span>
+        </div>
+        <button id="surpriseBtn">Тисни сюрприз ✨</button>
+    </div>
+
+    
+    
+    <div id="flipCardContainer">
+        <div class="flip-card-inner" id="cardInner">
+            <div class="flip-front">
+                <span style="font-family: 'Comfortaa'; color: #ff85a1;">Тицьни ✨</span>
+            </div>
+            <div class="flip-back">
+                <span style="font-family: 'Playfair Display'; color: #d63384; font-weight: bold; font-size: 18px;">
+                    З Днем Святого Валентина ❤️
+                </span>
+                <span class="date-text">14.02.2026</span>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div id="puzzleScreen">
+    <h2 class="puzzle-title">Збери пазл кохання ❤️</h2>
+    <div class="puzzle-grid" id="puzzleGrid"></div>
+    
+    <div id="winMessage">
+    <h1 style="color: #d63384; font-family: 'Playfair Display'; margin-bottom: 20px;">Тобі лист! 🌸</h1>
+    
+    <div style="position: relative;">
+        <!--  ФОТО КОНВЕРТА -->
+        <img src="letter.png" class="envelope-btn" id="openLetterBtn" alt="Конверт">
+        <div class="arrow-pointer" id="hintArrow">💫</div>
+    </div>
+    
+    <p style="font-family: 'Comfortaa'; color: #ff85a1; margin-top: 15px;">Натисни, щоб прочитати</p>
+</div>
+<div id="letterOverlay">
+    <div class="letter-card">
+        <div id="typingText"></div><span id="cursor" class="cursor"></span>
+        
+        <!-- Картинка-кнопка в кінці -->
+        <div id="finalNextBtn">
+            <img src="miha.png" class="final-img" alt="Далі" id="toLastPage">
+            <p style="font-size: 12px; color: #aaa; font-family: 'Comfortaa';">Торкнись, щоб йти далі</p>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+    const PHOTO_PATH = 'jujmi.jpg'; 
+    const heartContainer = document.getElementById('heartContainer');
+    const textContainer = document.getElementById('textContainer');
+    const surpriseBtn = document.getElementById('surpriseBtn');
+    const GIF_DURATION = 9500; 
+    const MY_LETTER_TEXT = `Привет, солнышко! 
+Я хочу сказать тебе кое-что очень важное... 
+Ты - лучшее, что случалось в моей жизни. 
+Каждая минута с тобой - это настоящее счастье. 
+Спасибо тебе за твою улыбку и смех, за твою поддержку и за то, что ты просто есть.
+Я обещаю всегда быть рядом с тобой в хорошем и плохом. 
+Я обещаю всегда слушать тебя, о том как прошли твои дни.
+Ты мой самый лучший!
+На тебя невозможно злиться. 
+Даже когда мы на расстоянии многих миль друг от друга, мы вместе сердцем ❤️.
+   Ты значишь для меня больше чем весь мир.
+Я люблю тебя несмотря ни на что! `;
+
+    // 1. Малювання великого серця (Screen 1)
+    const heartPattern = [
+        [0,0,1,1,0,0,0,1,1,0,0], [0,1,1,1,1,0,1,1,1,1,0],
+        [1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,1,1,1,1,1,1,1,1,0], [0,0,1,1,1,1,1,1,1,0,0],
+        [0,0,0,1,1,1,1,1,0,0,0], [0,0,0,0,1,1,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0,0]
+    ];
+
+    function drawHeart() {
+        const allHearts = [];
+        heartPattern.forEach((row) => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'heart-row';
+            row.forEach((cell) => {
+                const heart = document.createElement('span');
+                heart.className = 'mini-heart';
+                heart.innerHTML = '❤️';
+                if (cell === 0) heart.style.visibility = 'hidden';
+                else allHearts.push(heart);
+                rowDiv.appendChild(heart);
+            });
+            heartContainer.appendChild(rowDiv);
+        });
+
+        allHearts.sort(() => Math.random() - 0.5);
+        let maxD = 0;
+        allHearts.forEach((h, i) => {
+            const d = Math.floor(i / 5) * 400 + (Math.random() * 200);
+            maxD = Math.max(maxD, d);
+            setTimeout(() => h.classList.add('show'), d);
+        });
+
+        setTimeout(() => {
+            heartContainer.classList.add('bounce-animation', 'heart-glow');
+            textContainer.classList.add('visible');
+            setTimeout(() => surpriseBtn.classList.add('show'), 3000);
+        }, maxD + 500);
+    }
+
+    // 2. Перехід до пазлу
+    surpriseBtn.onclick = () => {
+        document.getElementById('mainScreen').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('mainScreen').style.display = 'none';
+            const ps = document.getElementById('puzzleScreen');
+            ps.style.opacity = '1';
+            ps.style.pointerEvents = 'all';
+            startPuzzle();
+        }, 1000);
+    };
+
+    // 3. Логіка пазлу (3 кроки перемішування)
+    let tiles = [0, 1, 2, 3, 4, 5, 6, 7, null]; 
+    
+    function startPuzzle() {
+        let currentEmpty = 8;
+        let lastPos = -1;
+        for (let i = 0; i < 3; i++) {
+            const moves = getValidMoves(currentEmpty).filter(m => m !== lastPos);
+            const move = moves[Math.floor(Math.random() * moves.length)];
+            [tiles[currentEmpty], tiles[move]] = [tiles[move], tiles[currentEmpty]];
+            lastPos = currentEmpty;
+            currentEmpty = move;
+        }
+        renderPuzzle();
+    }
+
+    function getValidMoves(idx) {
+        const m = [];
+        if (idx % 3 > 0) m.push(idx - 1);
+        if (idx % 3 < 2) m.push(idx + 1);
+        if (idx > 2) m.push(idx - 3);
+        if (idx < 6) m.push(idx + 3);
+        return m;
+    }
+
+    function renderPuzzle() {
+        const grid = document.getElementById('puzzleGrid');
+        grid.innerHTML = '';
+        tiles.forEach((tile, idx) => {
+            const cell = document.createElement('div');
+            cell.className = `puzzle-item ${tile === null ? 'empty' : ''}`;
+            if (tile !== null) {
+                cell.style.backgroundImage = `url('${PHOTO_PATH}')`;
+                cell.style.backgroundPosition = `${(tile % 3) * 50}% ${Math.floor(tile / 3) * 50}%`;
+                cell.style.backgroundSize = "300px 300px";
+            }
+            cell.onclick = () => {
+                const emptyIdx = tiles.indexOf(null);
+                if (getValidMoves(emptyIdx).includes(idx)) {
+                    [tiles[idx], tiles[emptyIdx]] = [tiles[emptyIdx], tiles[idx]];
+                    renderPuzzle();
+                    checkWin();
+                }
+            };
+            grid.appendChild(cell);
+        });
+    }
+
+    // 4. Перевірка перемоги та САМОРУБНИЙ САЛЮТ
+    function checkWin() {
+    const isWin = tiles.every((t, i) => t === (i === 8 ? null : i));
+    if (isWin) {
+        createMegaFireworks();
+        
+        setTimeout(() => {
+            const wm = document.getElementById('winMessage');
+            const overlay = document.getElementById('overlay');
+            const arrow = document.getElementById('hintArrow');
+            
+            overlay.style.display = 'block';
+            wm.style.display = 'flex';
+            setTimeout(() => wm.classList.add('show-modal'), 10);
+
+            // Через 3 секунди з'являється стрілочка
+            setTimeout(() => {
+                arrow.style.opacity = '1';
+            }, 3000);
+        }, 2000);
+    }
+}
+
+document.getElementById('openLetterBtn').onclick = function() {
+    // Ховаємо вікно з конвертом
+    document.getElementById('winMessage').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+    
+    // Показуємо лист
+    document.getElementById('letterOverlay').style.display = 'flex';
+    startTyping(MY_LETTER_TEXT);
+};
+
+function startTyping(text) {
+    const textContainer = document.getElementById('typingText');
+    const cursor = document.getElementById('cursor');
+    const finalBtn = document.getElementById('finalNextBtn');
+    
+    // ПЕРЕКОНАЄМОСЯ, ЩО КНОПКА ПРИХОВАНА ПЕРЕД ПОЧАТКОМ
+    finalBtn.style.display = 'none';
+    finalBtn.style.opacity = '0';
+    finalBtn.style.visibility = 'hidden';
+    
+    textContainer.innerHTML = '';
+    let i = 0;
+    
+    function type() {
+        if (i < text.length) {
+            let char = text.charAt(i);
+            textContainer.innerHTML += char;
+            i++;
+            
+            // Паузи на розділових знаках для реалістичності
+            let speed = (char === '.' || char === '!' || char === ',') ? 400 : 60;
+            setTimeout(type, speed + Math.random() * 40);
+        } else {
+            // ТЕКСТ ЗАВЕРШЕНО
+            
+            // 1. Прибираємо курсор
+            cursor.style.transition = 'opacity 1s';
+            cursor.style.opacity = '0';
+            setTimeout(() => cursor.style.display = 'none', 1000);
+            
+            // 2. ПЛАВНА ПОЯВА КНОПКИ (ТІЛЬКИ ЗАРАЗ!)
+            setTimeout(() => {
+                finalBtn.style.display = 'block';
+                finalBtn.style.visibility = 'visible';
+                
+                // Анімація м'якого випливання
+                finalBtn.animate([
+                    { opacity: 0, transform: 'translateY(10px) scale(0.8)' },
+                    { opacity: 1, transform: 'translateY(0) scale(1)' }
+                ], { 
+                    duration: 1200, 
+                    fill: 'forwards', 
+                    easing: 'ease-out' 
+                });
+            }, 1000); // Кнопка з'явиться через 1 сек після останньої крапки
+        }
+    }
+    type();
+}
+
+
+    // ФУНКЦІЯ САЛЮТУ
+    function createMegaFireworks() {
+    // Створюємо 150 сердечок замість 50
+    for (let i = 0; i < 350; i++) {
+        setTimeout(() => {
+            const heart = document.createElement('div');
+            // Випадково вибираємо емодзі або символ
+            const hearts = ['❤️', '💖', '💝', '💕', '🌸'];
+            heart.innerHTML = hearts[Math.floor(Math.random() * hearts.length)];
+            
+            heart.style.position = 'fixed';
+            // Початкова точка - центр екрану
+            heart.style.left = '50%';
+            heart.style.top = '50%';
+            heart.style.fontSize = (Math.random() * 25 + 15) + 'px';
+            heart.style.zIndex = '11000';
+            heart.style.pointerEvents = 'none';
+            heart.style.transition = `all ${Math.random() * 2 + 1}s cubic-bezier(0.1, 0.5, 0.3, 1)`;
+            
+            document.body.appendChild(heart);
+
+            // Випадковий розліт на весь екран
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.random() * 800 + 200; // Велика дистанція
+            const x = Math.cos(angle) * dist;
+            const y = Math.sin(angle) * dist;
+
+            // Анімація розльоту та обертання
+            requestAnimationFrame(() => {
+                heart.style.transform = `translate(${x}px, ${y}px) rotate(${Math.random() * 360}deg) scale(0)`;
+                heart.style.opacity = '0';
+            });
+
+            // Видаляємо елемент після завершення
+            setTimeout(() => heart.remove(), 2000);
+        }, i * 10); // Порційна поява для ефекту вибуху
+    }
+}
+// Список ваших 9 зображень (вкажіть правильні назви файлів)
+const FINAL_PHOTOS = [
+    '1.jpg', '2.jpg', '3.jpg', 
+    '4.jpg', '5.jpg', '6.jpg', 
+    '7.jpg', '8.jpg', '9.jpg'
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('toLastPage');
+    btn.addEventListener('click', () => {
+
+window.location.href = "final.html";
+
+});
+
+});
+
+function showStackedPhotos() {
+    const stack = document.getElementById('photoStack');
+    
+    FINAL_PHOTOS.forEach((src, index) => {
+        setTimeout(() => {
+            const img = document.createElement('img');
+            img.src = src;
+            img.className = 'stacked-photo';
+            
+            // Випадковий невеликий нахил для ефекту "купи"
+            const randomRotation = Math.random() * 20 - 10;
+            const randomX = Math.random() * 20 - 10;
+            const randomY = Math.random() * 20 - 10;
+
+            stack.appendChild(img);
+
+            // Анімація появи
+            requestAnimationFrame(() => {
+                img.style.opacity = '1';
+                img.style.transform = `translate(${randomX}px, ${randomY}px) rotate(${randomRotation}deg) scale(1)`;
+            });
+
+            // Якщо це останнє фото — показуємо кнопку "Тицьни"
+            if (index === FINAL_PHOTOS.length - 1) {
+                setTimeout(showFlipCard, 1500);
+            }
+        }, index * 800); // Кожне фото через 0.8 сек
+    });
+}
+
+function showFlipCard() {
+    const card = document.getElementById('flipCardContainer');
+    card.style.display = 'block';
+    setTimeout(() => {
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0) scale(1)';
+    }, 100);
+}
+
+// Логіка перевороту картки
+document.getElementById('flipCardContainer').onclick = function() {
+    document.getElementById('cardInner').classList.toggle('flipped');
+    
+    // Додамо ще трохи конфетті при перевороті, якщо захочеш
+    createMegaFireworks(); 
+};
+    window.onload = () => setTimeout(drawHeart, GIF_DURATION);
+</script>
+
+</body>
+</html>

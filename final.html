@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Для тебе ❤️</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Comfortaa&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+    margin:0;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#fff5f7;
+    overflow:hidden;
+    font-family:'Playfair Display',serif;
+}
+
+/* контейнер */
+.photo-stack{
+    position:relative;
+    width:600px;
+    height:600px;
+}
+
+/* фото */
+.stacked-photo{
+    position:absolute;
+    width:160px;
+    height:200px;
+    object-fit:cover;
+    border:8px solid white;
+    box-shadow:0 15px 35px rgba(0,0,0,0.15);
+    border-radius:4px;
+
+    opacity:0;
+    transform:scale(0.3) rotate(0deg);
+
+    transition:
+        transform 1.2s cubic-bezier(0.23,1,0.32,1),
+        opacity 1s;
+}
+
+/* картка */
+
+#flipCardContainer{
+
+position:fixed;
+
+left: calc(50% + 460px); /* правіше від фото */
+top: 50%;
+
+transform: translate(-50%, -50%) scale(0.7);
+
+width:280px;
+height:160px;
+
+perspective:1200px;
+
+opacity:0;
+
+transition:all 1s cubic-bezier(0.23,1,0.32,1);
+
+cursor:pointer;
+
+}
+
+.flip-card-inner{
+
+    width:100%;
+    height:100%;
+
+    transition:transform 1s cubic-bezier(0.23,1,0.32,1);
+
+    transform-style:preserve-3d;
+
+}
+
+.flip-card-inner.flipped{
+    transform:rotateY(180deg);
+}
+
+.flip-front,.flip-back{
+
+    position:absolute;
+
+    width:100%;
+    height:100%;
+
+    backface-visibility:hidden;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+
+    border-radius:20px;
+
+    background:white;
+
+    box-shadow:0 20px 60px rgba(255,182,193,0.5);
+
+    border:2px solid #fff0f5;
+
+}
+
+/* перед */
+.flip-front{
+
+    font-family:'Comfortaa',sans-serif;
+    font-size:28px;
+    color:#ff85a1;
+
+}
+
+/* зад */
+.flip-back{
+
+    transform:rotateY(180deg);
+
+    background:linear-gradient(
+        135deg,
+        #fff0f5,
+        #ffffff
+    );
+
+    padding:20px;
+    text-align:center;
+
+}
+
+.flip-back span{
+
+    font-size:24px;
+    font-weight:bold;
+    color:#d63384;
+
+}
+
+.date-text{
+
+    margin-top:10px;
+    font-size:14px;
+    color:#ff85a1;
+    font-family:'Comfortaa',sans-serif;
+
+}
+
+</style>
+</head>
+<body>
+
+<div class="photo-stack" id="photoStack"></div>
+
+<div id="flipCardContainer">
+
+<div class="flip-card-inner" id="cardInner">
+
+<div class="flip-front">
+Тицьни ✨
+</div>
+
+<div class="flip-back">
+
+<span>
+З Днем Святого Валентина ❤️
+</span>
+
+<div class="date-text">
+14.02.2026
+</div>
+
+</div>
+
+</div>
+</div>
+
+<script>
+
+const FINAL_PHOTOS = [
+'1.jpg','2.jpg','3.jpg',
+'4.jpg','5.jpg','6.jpg',
+'7.jpg','8.jpg','9.jpg'
+];
+
+window.onload = () => {
+
+showStackedPhotos();
+
+};
+
+function showStackedPhotos(){
+
+const stack = document.getElementById('photoStack');
+
+const photoWidth = 160;
+const photoHeight = 200;
+
+const spacingX = 180;
+const spacingY = 220;
+
+/* центр контейнера */
+const centerX = stack.offsetWidth / 2;
+const centerY = stack.offsetHeight / 2;
+
+FINAL_PHOTOS.forEach((src,index)=>{
+
+setTimeout(()=>{
+
+const img = document.createElement('img');
+
+img.src = src;
+img.className = 'stacked-photo';
+
+stack.appendChild(img);
+
+/* координати 3×3 */
+const row = Math.floor(index/3);
+const col = index%3;
+
+/* центрована позиція */
+let x =
+centerX
++
+(col - 1) * spacingX
+-
+photoWidth / 2;
+
+let y =
+centerY
++
+(row - 1) * spacingY
+-
+photoHeight / 2;
+
+/* випадковий нахил */
+const rotate =
+Math.random()*30-15;
+
+/* випадковий невеликий зсув */
+x += Math.random()*30-15;
+y += Math.random()*30-15;
+
+requestAnimationFrame(()=>{
+
+img.style.opacity='1';
+
+img.style.transform =
+`translate(${x}px,${y}px)
+ rotate(${rotate}deg)
+ scale(1)`;
+
+});
+
+if(index===FINAL_PHOTOS.length-1){
+
+setTimeout(showCard,1200);
+
+}
+
+},index*500);
+
+});
+
+}
+
+
+function showCard(){
+
+const card =
+document.getElementById('flipCardContainer');
+
+card.style.opacity='1';
+
+card.style.transform=
+'translate(-50%, -50%) scale(1)';
+
+}
+
+/* переворот */
+
+document.getElementById('flipCardContainer').onclick=()=>{
+
+document.getElementById('cardInner')
+.classList.toggle('flipped');
+
+};
+
+</script>
+
+</body>
+</html>
